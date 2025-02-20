@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CigarPOS Customers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 60%;
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            text-align: left;
+            border-radius: 8px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .close {
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .modal-body input {
+            display: block;
+            width: 95%;
+            margin-bottom: 10px;
+            padding: 8px;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Customer List</h1>
+
+    <input type="text" id="searchInput" placeholder="Search by name...">
+    <button onclick="fetchCustomers()">Get Customers</button>
+    <button onclick="openModal()">New Customer</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody id="customerList"></tbody>
+    </table>
+
+    <!-- Modal for Adding a Customer -->
+    <div id="customerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Customer</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="nameInput" placeholder="Name (required)">
+                <input type="email" id="emailInput" placeholder="Email (required)">
+                <input type="text" id="phoneInput" placeholder="Phone (optional)">
+                <input type="text" id="mobileInput" placeholder="Mobile (optional)">
+                <input type="text" id="addressInput" placeholder="Address (optional)">
+                <input type="text" id="suburbInput" placeholder="Suburb (optional)">
+                <input type="text" id="postcodeInput" placeholder="Postcode (optional)">
+                <input type="text" id="stateInput" placeholder="State (optional)">
+                <input type="text" id="countryInput" placeholder="Country (optional)">
+                <input type="text" id="notesInput" placeholder="Notes (optional)">
+            </div>
+            <div class="modal-footer">
+                <button onclick="addCustomer()">OK</button>
+                <button onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function fetchCustomers() {
+            const searchValue = document.getElementById("searchInput").value.trim();
+            let url = "http://localhost:3000/customers";
+
+            if (searchValue) {
+                url += `?name=${encodeURIComponent(searchValue)}`;
+            }
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById("customerList");
+                    tableBody.innerHTML = ""; // Clear previous data
+
+                    if (data.customers.length === 0) {
+                        tableBody.innerHTML = "<tr><td colspan='2'>No customers found</td></tr>";
+                    } else {
+                        data.customers.forEach(customer => {
+                            const row = document.createElement("tr");
+
+                            const nameCell = document.createElement("td");
+                            nameCell.textContent = customer.name;
+                            row.appendChild(nameCell);
+
+                            const emailCell = document.createElement("td");
+                            emailCell.textContent = customer.email;
+                            row.appendChild(emailCell);
+
+                            tableBody.appendChild(row);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching customers:", error);
+                });
+        }
+
+        function openModal() {
+            document.getElementById("customerModal").style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById("customerModal").style.display = "none";
+        }
+
+        function addCustomer() {
+            const name = document.getElementById("nameInput").value.trim();
+            const email = document.getElementById("emailInput").value.trim();
+            const phone = document.getElementById("phoneInput").value.trim();
+            const mobile = document.getElementById("mobileInput").value.trim();
+            const address = document.getElementById("addressInput").value.trim();
+            const suburb = document.getElementById("suburbInput").value.trim();
+            const postcode = document.getElementById("postcodeInput").value.trim();
+            const state = document.getElementById("stateInput").value.trim();
+            const country = document.getElementById("countryInput").value.trim();
+            const notes = document.getElementById("notesInput").value.trim();
+
+            if (!name || !email) {
+                alert("Name and Email are required!");
+                return;
+            }
+
+            fetch("http://localhost:3000/customer", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name,
+                    email,
+                    phone,
+                    mobile,
+                    address,
+                    suburb,
+                    postcode,
+                    state,
+                    country,
+                    notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("Customer added successfully!");
+                closeModal();
+                fetchCustomers(); // Refresh customer list
+            })
+            .catch(error => {
+                console.error("Error adding customer:", error);
+            });
+        }
+    </script>
+
+</body>
+</html>
